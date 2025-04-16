@@ -1,8 +1,6 @@
-import { signOutAction } from '@/actions/signOut';
-import { getClient, query } from '@/src/lib/apollo/client';
-import { auth, signOut } from '@/src/lib/auth';
+import { query } from '@/src/lib/apollo/client';
+import { auth } from '@/src/lib/auth';
 import { gql } from '@apollo/client';
-import { redirect } from 'next/navigation';
 
 const Home = async () => {
   const session = await auth();
@@ -11,7 +9,7 @@ const Home = async () => {
 
   if (session) {
     user = await query({
-      errorPolicy: 'all',
+      // errorPolicy: 'all',
       query: gql`
         query {
           user {

@@ -4,48 +4,121 @@ export type ParsedCookie = {
   httpOnly: boolean;
   secure: boolean;
   path: string;
+  domain?: string;
   expires?: Date;
   maxAge?: number;
+  sameSite?: 'Strict' | 'Lax' | 'None';
 };
 
 export const parseSetCookieString = (setCookieString: string): ParsedCookie[] => {
+  // Handle empty or invalid input
+  if (!setCookieString || typeof setCookieString !== 'string') {
+    return [];
+  }
+
   const cookieParts = setCookieString.split(/,(?=\s*\w+=)/).map((cookie) => cookie.trim());
 
-  return cookieParts.map((cookie) => {
-    const cookieData: ParsedCookie = {} as ParsedCookie;
+  // Filter out empty parts
+  return cookieParts
+    .filter((cookie) => cookie.length > 0)
+    .map((cookie) => {
+      const cookieData: ParsedCookie = {
+        name: '',
+        value: '',
+        httpOnly: false,
+        secure: false,
+        path: '/',
+      };
 
-    // Split cookie into key-value pairs (name=value)
-    const [nameValue, ...attributes] = cookie.split(';').map((attr) => attr.trim());
-    const [name, value] = nameValue.split('=');
-    cookieData.name = name;
-    cookieData.value = value;
+      try {
+        // Split cookie into key-value pairs (name=value)
+        const [nameValue, ...attributes] = cookie.split(';').map((attr) => attr.trim());
 
-    attributes.forEach((attr) => {
-      if (attr.toLowerCase().startsWith('httponly')) {
-        cookieData.httpOnly = true;
-      } else if (attr.toLowerCase().startsWith('secure')) {
-        cookieData.secure = true;
-      } else if (attr.toLowerCase().startsWith('path')) {
-        cookieData.path = attr.split('=')[1];
-      } else if (attr.toLowerCase().startsWith('max-age')) {
-        cookieData.maxAge = parseInt(attr.split('=')[1], 10);
-      } else if (attr.toLowerCase().startsWith('expires')) {
-        // Extract and parse the date
-        const dateStr = attr.split('=')[1].trim();
-        // Ensure the date is correctly formatted
-        cookieData.expires = new Date(dateStr.replace(/(;.*)?$/, ''));
-        // Check if the date is invalid, and handle accordingly
-        if (isNaN(cookieData.expires.getTime())) {
-          cookieData.expires = undefined;
+        if (!nameValue?.includes('=')) {
+          throw new Error('Invalid cookie format: missing name=value pair');
         }
+
+        const [name, ...valueParts] = nameValue.split('=');
+        cookieData.name = name;
+        // Handle values that might contain '=' characters
+        cookieData.value = valueParts.join('=');
+
+        // Decode the value if it's URL encoded
+        try {
+          cookieData.value = decodeURIComponent(cookieData.value);
+        } catch (e) {
+          // If decoding fails, keep the original value
+        }
+
+        attributes.forEach((attr) => {
+          const [attrName, ...attrValueParts] = attr.split('=').map((part) => part.trim());
+          const attrValue = attrValueParts.join('=');
+
+          switch (attrName.toLowerCase()) {
+            case 'httponly':
+              cookieData.httpOnly = true;
+              break;
+            case 'secure':
+              cookieData.secure = true;
+              break;
+            case 'path':
+              cookieData.path = attrValue || '/';
+              break;
+            case 'domain':
+              cookieData.domain = attrValue;
+              break;
+            case 'max-age':
+              const maxAge = parseInt(attrValue, 10);
+              if (!isNaN(maxAge)) {
+                cookieData.maxAge = maxAge;
+              }
+              break;
+            case 'expires':
+              try {
+                const dateStr = attrValue.replace(/(;.*)?$/, '');
+                const expires = new Date(dateStr);
+                if (!isNaN(expires.getTime())) {
+                  cookieData.expires = expires;
+                }
+              } catch (e) {
+                // Invalid date format, ignore
+              }
+              break;
+            case 'samesite':
+              const sameSiteValue = attrValue.toLowerCase();
+              if (['strict', 'lax', 'none'].includes(sameSiteValue)) {
+                cookieData.sameSite = (sameSiteValue.charAt(0).toUpperCase() +
+                  sameSiteValue.slice(1)) as ParsedCookie['sameSite'];
+              }
+              break;
+          }
+        });
+
+        return cookieData;
+      } catch (error) {
+        // If parsing fails for a cookie, return a minimal valid cookie object
+        return cookieData;
       }
     });
+};
 
-    // Set defaults if not provided in cookie attributes
-    cookieData.httpOnly = cookieData.httpOnly || false;
-    cookieData.secure = cookieData.secure || false;
-    cookieData.path = cookieData.path || '/';
+export type CookieMap = Record<string, Omit<ParsedCookie, 'name'>>;
 
-    return cookieData;
-  });
+export const parseSetCookieStringAsMap = (setCookieString: string): CookieMap => {
+  const cookies = parseSetCookieString(setCookieString);
+  return cookies.reduce<CookieMap>((acc, cookie) => {
+    const { name, ...cookieData } = cookie;
+    acc[name] = cookieData;
+    return acc;
+  }, {});
+};
+
+export type SimpleCookieMap = Record<string, string>;
+
+export const parseSetCookieStringToValues = (setCookieString: string): SimpleCookieMap => {
+  const cookies = parseSetCookieString(setCookieString);
+  return cookies.reduce<SimpleCookieMap>((acc, { name, value }) => {
+    acc[name] = value;
+    return acc;
+  }, {});
 };

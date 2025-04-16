@@ -1,6 +1,5 @@
 import { ApolloLink } from '@apollo/client';
 import { setContext } from '@apollo/client/link/context';
-import { cookies } from 'next/headers';
 
 import { auth } from '../../auth';
 
@@ -10,8 +9,6 @@ export const createAuthLink = (): ApolloLink => {
   return setContext(async (operation, { headers }) => {
     try {
       const { accessToken } = (await auth()) ?? {};
-
-      console.log('accessToken', accessToken);
 
       return {
         headers: {

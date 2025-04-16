@@ -9,12 +9,15 @@ import {
   MutationOptions,
   OperationVariables,
   QueryOptions,
+  TypedDocumentNode,
 } from '@apollo/client';
 import { ApolloClient, InMemoryCache, registerApolloClient } from '@apollo/experimental-nextjs-app-support';
-import { GraphQLFormattedError } from 'graphql';
+import { DocumentNode, GraphQLFormattedError } from 'graphql';
 import { redirect } from 'next/navigation';
 
 import { createAuthLink, errorLink, httpLink } from './links';
+
+import { parseSetCookieStringToValues } from '../parseCookies';
 
 const handleUnauthorizedError = (errors?: readonly GraphQLFormattedError[]) => {
   if (errors?.some((err) => err.message === 'Unauthorized')) {
@@ -89,4 +92,29 @@ export const mutate = async <
 
     throw error;
   }
+};
+
+export const rawQuery = async <T = unknown, TVariables extends OperationVariables = OperationVariables>(
+  query: DocumentNode | TypedDocumentNode<T, TVariables>,
+  variables: TVariables,
+): Promise<FetchResult<T> & { cookies: Record<string, string>; status: number; statusText: string }> => {
+  const uri = httpLink().options.uri?.toString();
+  if (!uri) {
+    throw new Error('GraphQL URI is not defined');
+  }
+  const res = await fetch(uri, {
+    body: JSON.stringify({ query: query.loc?.source.body, variables }),
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+  });
+  if (!res.ok) {
+    throw new Error('GraphQL request failed');
+  }
+  const cookiesString = res.headers.get('set-cookie') ?? '';
+
+  const cookies = parseSetCookieStringToValues(cookiesString);
+
+  const response: FetchResult<T> = await res.json();
+
+  return { ...response, cookies, status: res.status, statusText: res.statusText };
 };

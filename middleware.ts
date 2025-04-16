@@ -1,6 +1,7 @@
 import { encode, getToken } from 'next-auth/jwt';
 import { type NextMiddleware, type NextRequest, NextResponse } from 'next/server';
 
+import { RefreshTokenError } from './src/lib/errors';
 import { refreshAccessToken, shouldUpdateToken } from './src/lib/refreshTokens';
 
 export const SIGNIN_SUB_URL = '/login';
@@ -38,10 +39,10 @@ export function updateCookie(
       sameSite: 'lax',
     });
   } else {
-    console.log('deleting session token');
+    console.log('deleting session token and redirecting to login');
 
+    response = NextResponse.redirect(new URL(SIGNIN_SUB_URL, request.url));
     response.cookies.delete(sessionCookieName);
-    // return NextResponse.redirect(new URL(SIGNIN_SUB_URL, request.url));
   }
 
   return response;
@@ -53,17 +54,10 @@ export const middleware: NextMiddleware = async (request: NextRequest) => {
 
   if (request.url.includes('/api/auth/logout')) {
     console.log('logout middleware');
-    const redirectUrl = new URL('/login', request.url);
-    response = NextResponse.redirect(redirectUrl);
-    response = updateCookie(null, request, response);
-
-    return response;
+    return updateCookie(null, request, response);
   }
 
   const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
-  console.log('token', token);
-
-  //   const isAuthenticated = !!token;
 
   if (!token) {
     console.log('redirecting to login');
@@ -83,19 +77,18 @@ export const middleware: NextMiddleware = async (request: NextRequest) => {
       });
       response = updateCookie(newSessionToken, request, response);
     } catch (error) {
-      console.log('Error refreshing token: ', error);
-      return updateCookie(null, request, response);
+      if (error instanceof RefreshTokenError) {
+        // Clear the session token and redirect to login
+        return updateCookie(null, request, response);
+      }
+
+      throw error;
     }
   }
-
-  //   if (isAdminPage && isAuthenticated && !admins.includes(token.email!)) {
-  //     return NextResponse.redirect(new URL('/forbidden', request.url));
-  //   }
 
   return response;
 };
 
 export const config = {
   matcher: ['/((?!.+\\.[\\w]+$|_next|login).*)', '/', '/(api|trpc)(.*)'],
-  // matcher: ['/'],
 };
