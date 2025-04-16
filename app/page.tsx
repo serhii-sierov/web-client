@@ -1,6 +1,6 @@
+import { signOutAction } from '@/actions/signOut';
 import { getClient, query } from '@/src/lib/apollo/client';
 import { auth, signOut } from '@/src/lib/auth';
-import { signOutAction } from '@/src/lib/signOut';
 import { gql } from '@apollo/client';
 import { redirect } from 'next/navigation';
 
@@ -10,22 +10,6 @@ const Home = async () => {
   let user;
 
   if (session) {
-    // user = await getClient().query({
-    //   errorPolicy: 'all',
-    //   query: gql`
-    //     query {
-    //       user {
-    //         id
-    //         email
-    //         sessions {
-    //           sessionId
-    //           device
-    //           ipAddress
-    //         }
-    //       }
-    //     }
-    //   `,
-    // });
     user = await query({
       errorPolicy: 'all',
       query: gql`
@@ -42,11 +26,6 @@ const Home = async () => {
         }
       `,
     });
-  }
-
-  console.log(user);
-  if (user?.errors?.some((err) => err.message === 'Unauthorized')) {
-    // signOut();
   }
 
   return (

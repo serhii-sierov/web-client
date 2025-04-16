@@ -1,4 +1,4 @@
-import { signOutAction } from '../lib/signOut';
+import { signOutAction } from '@/actions/signOut';
 
 const SignOutButton: React.FC<React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement>>> = ({
   children,

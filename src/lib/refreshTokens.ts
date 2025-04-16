@@ -69,7 +69,7 @@ export function shouldUpdateToken(token: JWT): boolean {
 }
 
 export async function refreshAccessToken(token: JWT): Promise<JWT> {
-  console.log('REFRESHING TOKENS unsing', token);
+  console.log('REFRESHING TOKENS using', token);
 
   if (isRefreshing) {
     return token;
@@ -107,6 +107,7 @@ export async function refreshAccessToken(token: JWT): Promise<JWT> {
     const decodedAccessToken = jwtDecode(accessToken);
 
     if (!accessToken || !refreshToken || !decodedAccessToken?.exp) {
+      token.error = 'RefreshTokenError';
       throw new Error('Unauthorized');
     }
 
@@ -117,7 +118,8 @@ export async function refreshAccessToken(token: JWT): Promise<JWT> {
       refreshToken: refreshToken ?? token?.refreshToken,
     };
   } catch (e) {
-    console.error(e);
+    // console.error(e);
+    throw e;
   } finally {
     isRefreshing = false;
   }

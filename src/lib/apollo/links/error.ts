@@ -7,10 +7,6 @@ export const errorLink = onError(({ graphQLErrors, networkError }) => {
         `[GraphQL error]: Message: ${message}, Location: ${JSON.stringify(locations, null, 2)}, Path: ${path}`,
       ),
     );
-
-    if (graphQLErrors?.some((err) => err.message === 'Unauthorized')) {
-      console.log('Unauthorized error');
-    }
   }
 
   if (networkError) {

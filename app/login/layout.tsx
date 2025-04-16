@@ -14,9 +14,9 @@ export default async function LoginLayout({
 }>) {
   const session = await auth();
 
-  if (session) {
-    redirect('/');
-  }
+  // if (session) {
+  //   redirect('/');
+  // }
 
   return <>{children}</>;
 }

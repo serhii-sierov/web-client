@@ -11,9 +11,16 @@ import {
   QueryOptions,
 } from '@apollo/client';
 import { ApolloClient, InMemoryCache, registerApolloClient } from '@apollo/experimental-nextjs-app-support';
+import { GraphQLFormattedError } from 'graphql';
 import { redirect } from 'next/navigation';
 
 import { createAuthLink, errorLink, httpLink } from './links';
+
+const handleUnauthorizedError = (errors?: readonly GraphQLFormattedError[]) => {
+  if (errors?.some((err) => err.message === 'Unauthorized')) {
+    redirect('/api/auth/logout');
+  }
+};
 
 export const { getClient, PreloadQuery } = registerApolloClient(() => {
   const authLink = createAuthLink();
@@ -28,17 +35,24 @@ export const query = async <T = unknown, TVariables extends OperationVariables =
   options: QueryOptions<TVariables, T>,
 ): Promise<ApolloQueryResult<MaybeMasked<T>>> => {
   try {
-    console.log('query');
+    console.log(
+      'QUERY:',
+      options.query.loc?.source.body
+        .split('\n')
+        .map((line) => line.trim())
+        .join(' '),
+    );
 
-    return await getClient().query<T, TVariables>(options);
+    const response = await getClient().query<T, TVariables>(options);
+    handleUnauthorizedError(response.errors);
+
+    return response;
   } catch (error) {
     console.log('query error');
 
-    // if (error instanceof ApolloError && error.cause instanceof AccessTokenError) {
-    //   console.error(error);
-
-    //   redirect(LOGOUT_ROUTE); //"/api/auth/logout"
-    // }
+    if (error instanceof ApolloError) {
+      handleUnauthorizedError(error.graphQLErrors);
+    }
 
     throw error;
   }
@@ -57,13 +71,21 @@ export const mutate = async <
   options: MutationOptions<TData, TVariables, TContext>,
 ): Promise<FetchResult<MaybeMasked<TData>>> => {
   try {
-    return await getClient().mutate<TData, TVariables, TContext, TCache>(options);
-  } catch (error) {
-    // if (error instanceof ApolloError && error.cause instanceof AccessTokenError) {
-    //   console.error(error);
+    console.log(
+      'MUTATION:',
+      options.mutation.loc?.source.body
+        .split('\n')
+        .map((line) => line.trim())
+        .join(' '),
+    );
+    const response = await getClient().mutate<TData, TVariables, TContext, TCache>(options);
+    handleUnauthorizedError(response.errors);
 
-    //   redirect(LOGOUT_ROUTE);
-    // }
+    return response;
+  } catch (error) {
+    if (error instanceof ApolloError) {
+      handleUnauthorizedError(error.graphQLErrors);
+    }
 
     throw error;
   }

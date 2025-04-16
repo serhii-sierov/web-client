@@ -1,9 +1,7 @@
-import { getClient } from '@/src/lib/apollo/client';
-import { SIGN_OUT } from '@/src/lib/apollo/graphql/mutations';
-import { cookies } from 'next/headers';
-import { redirect } from 'next/navigation';
+import { signOut } from '@/src/lib/auth';
+import { NextResponse } from 'next/server';
 
-export async function POST(request: Request) {
+export async function GET(request: Request) {
   // const body = await request.json();
 
   // // change with your own endpoint
@@ -21,8 +19,16 @@ export async function POST(request: Request) {
   //   if (cookie.name.startsWith(`prefix.`)) (await cookies()).delete(cookie.name as any);
   // });
 
-  const a = await getClient().mutate({ mutation: SIGN_OUT });
-  console.log('ddddd', a);
+  // const a = await getClient().mutate({ mutation: SIGN_OUT });
+  // console.log('ddddd', a);
+  // signOutAction();
+
+  console.log('logout route');
+  let response = NextResponse.next();
+  // return Response.redirect(new URL('/login', request.url));
+
+  // const res = await signOut();
+  // console.log('res', res);
 
   return Response.json({
     success: true,

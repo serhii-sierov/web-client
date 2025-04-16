@@ -7,9 +7,11 @@ import { auth } from '../../auth';
 export type CreateAuthLink = () => ApolloLink;
 
 export const createAuthLink = (): ApolloLink => {
-  return setContext(async (req, { headers }) => {
+  return setContext(async (operation, { headers }) => {
     try {
       const { accessToken } = (await auth()) ?? {};
+
+      console.log('accessToken', accessToken);
 
       return {
         headers: {

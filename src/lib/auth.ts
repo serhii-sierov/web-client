@@ -63,12 +63,12 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   },
   callbacks: {
     authorized: async ({ request, auth }) => {
-      console.log('===== authorized', { request, auth });
+      // console.log('===== authorized', { request, auth });
 
       return !!auth;
     },
     async signIn({ user, account, profile, email, credentials }) {
-      console.log('===== signIn', { user, account, profile, email, credentials });
+      // console.log('===== signIn', { user, account, profile, email, credentials });
 
       const { provider, access_token } = account ?? {};
       if (provider === 'google') {
@@ -104,6 +104,10 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return token;
     },
     async session({ session, token }): Promise<Session> {
+      if (token.error === 'RefreshTokenError') {
+        // await signOut();
+        throw new Error('Session expired');
+      }
       if (!token) {
         return session;
       }

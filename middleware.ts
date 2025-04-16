@@ -4,9 +4,11 @@ import { type NextMiddleware, type NextRequest, NextResponse } from 'next/server
 import { refreshAccessToken, shouldUpdateToken } from './src/lib/refreshTokens';
 
 export const SIGNIN_SUB_URL = '/login';
-export const SESSION_TIMEOUT = 60 * 60 * 24 * 30; // 30 days
-export const SESSION_SECURE = process.env.NEXTAUTH_URL?.startsWith('https://');
-export const SESSION_COOKIE = SESSION_SECURE ? '__Secure-authjs.session-token' : 'authjs.session-token';
+
+const sessionTimeout = 60 * 60 * 24 * 30; // 30 days
+const isSecure = process.env.NEXTAUTH_URL?.startsWith('https://');
+const cookiePrefix = isSecure ? '__Secure-' : '';
+const sessionCookieName = `${cookiePrefix}authjs.session-token`;
 
 export function updateCookie(
   sessionToken: string | null,
@@ -23,45 +25,61 @@ export function updateCookie(
 
   if (sessionToken) {
     // Set the session token in the request and response cookies for a valid session
-    request.cookies.set(SESSION_COOKIE, sessionToken);
+    request.cookies.set(sessionCookieName, sessionToken);
     response = NextResponse.next({
       request: {
         headers: request.headers,
       },
     });
-    response.cookies.set(SESSION_COOKIE, sessionToken, {
+    response.cookies.set(sessionCookieName, sessionToken, {
       httpOnly: true,
-      maxAge: SESSION_TIMEOUT,
-      secure: SESSION_SECURE,
+      maxAge: sessionTimeout,
+      secure: isSecure,
       sameSite: 'lax',
     });
   } else {
-    request.cookies.delete(SESSION_COOKIE);
-    return NextResponse.redirect(new URL(SIGNIN_SUB_URL, request.url));
+    console.log('deleting session token');
+
+    response.cookies.delete(sessionCookieName);
+    // return NextResponse.redirect(new URL(SIGNIN_SUB_URL, request.url));
   }
 
   return response;
 }
 
 export const middleware: NextMiddleware = async (request: NextRequest) => {
-  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
-  //   const isAuthenticated = !!token;
-
+  console.log('middleware', request.url);
   let response = NextResponse.next();
 
+  if (request.url.includes('/api/auth/logout')) {
+    console.log('logout middleware');
+    const redirectUrl = new URL('/login', request.url);
+    response = NextResponse.redirect(redirectUrl);
+    response = updateCookie(null, request, response);
+
+    return response;
+  }
+
+  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
+  console.log('token', token);
+
+  //   const isAuthenticated = !!token;
+
   if (!token) {
+    console.log('redirecting to login');
     return NextResponse.redirect(new URL(SIGNIN_SUB_URL, request.url));
   }
 
   if (shouldUpdateToken(token)) {
     try {
       const newToken = await refreshAccessToken(token);
+      console.log('newToken', newToken);
 
       const newSessionToken = await encode({
         secret: process.env.NEXTAUTH_SECRET!,
         token: newToken,
-        maxAge: SESSION_TIMEOUT,
-        salt: SESSION_COOKIE,
+        maxAge: sessionTimeout,
+        salt: sessionCookieName,
       });
       response = updateCookie(newSessionToken, request, response);
     } catch (error) {
@@ -78,6 +96,6 @@ export const middleware: NextMiddleware = async (request: NextRequest) => {
 };
 
 export const config = {
-  //   matcher: ['/((?!.+\\.[\\w]+$|_next).*)', '/', '/(api|trpc)(.*)'],
-  matcher: ['/'],
+  matcher: ['/((?!.+\\.[\\w]+$|_next|login).*)', '/', '/(api|trpc)(.*)'],
+  // matcher: ['/'],
 };
