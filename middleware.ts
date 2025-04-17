@@ -52,11 +52,6 @@ export const middleware: NextMiddleware = async (request: NextRequest) => {
   console.log('middleware', request.url);
   let response = NextResponse.next();
 
-  if (request.url.includes('/api/auth/logout')) {
-    console.log('logout middleware');
-    return updateCookie(null, request, response);
-  }
-
   const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
 
   if (!token) {

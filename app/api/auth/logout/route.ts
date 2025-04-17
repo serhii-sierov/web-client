@@ -1,6 +1,6 @@
-export async function GET(request: Request) {
-  return Response.json({
-    success: true,
-    status: 200,
-  });
+import { updateCookie } from '@/middleware';
+import { NextRequest, NextResponse } from 'next/server';
+
+export async function GET(request: NextRequest) {
+  return updateCookie(null, request, new NextResponse());
 }

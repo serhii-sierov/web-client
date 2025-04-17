@@ -7,7 +7,6 @@ import { auth } from '../lib/auth';
 
 const AppBar = async () => {
   const session = await auth();
-  // console.log('AppBar', session);
 
   return (
     <div style={{ borderBottom: '1px solid white', padding: '10px' }}>
