@@ -12,11 +12,5 @@ export default async function LoginLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-
-  // if (session) {
-  //   redirect('/');
-  // }
-
   return <>{children}</>;
 }

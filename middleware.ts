@@ -51,14 +51,14 @@ export function updateCookie(
 export const middleware: NextMiddleware = async (request: NextRequest) => {
   console.log('middleware', request.url);
 
+  let response = NextResponse.next();
   // Skip middleware for Google auth callback
   if (request.url.includes('/api/auth/callback/google')) {
-    return NextResponse.next();
+    return response;
   }
 
-  let response = NextResponse.next();
-
   const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
+  console.log('token', token);
 
   if (!token) {
     console.log('redirecting to login');

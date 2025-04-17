@@ -15,6 +15,8 @@ const Home = async () => {
           user {
             id
             email
+            name
+            picture
             sessions {
               sessionId
               device

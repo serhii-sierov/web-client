@@ -6,6 +6,10 @@ export const SIGN_IN_CREDENTIALS = gql`
       userId
       sessionId
       expiresAt
+      user {
+        name
+        picture
+      }
     }
   }
 `;
@@ -16,6 +20,10 @@ export const SIGN_IN_GOOGLE = gql`
       userId
       sessionId
       expiresAt
+      user {
+        name
+        picture
+      }
     }
   }
 `;

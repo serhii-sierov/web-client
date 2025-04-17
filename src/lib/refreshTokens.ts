@@ -1,9 +1,11 @@
 import { type JWT } from 'next-auth/jwt';
 
+import { rawQuery } from './apollo/client';
 import { REFRESH_TOKENS } from './apollo/graphql/mutations';
 import { RefreshTokenError } from './errors';
+import { getUserAgentAndIp } from './getUserAgentAndIp';
 import { jwtDecode } from './jwtDecode';
-import { parseSetCookieStringToValues } from './parseCookies';
+import { SignInResponse } from './types';
 
 let isRefreshing = false;
 
@@ -21,27 +23,19 @@ export async function refreshAccessToken(token: JWT): Promise<JWT> {
   }
 
   isRefreshing = true;
+  const { userAgent, ip } = await getUserAgentAndIp();
 
   try {
-    const options = {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Accept': 'application/json',
+    const { cookies } = await rawQuery<SignInResponse>(
+      REFRESH_TOKENS,
+      {},
+      {
         'Cookie': `refreshToken=${token.refreshToken}`,
+        'User-Agent': userAgent,
+        'X-Forwarded-For': ip,
       },
-      body: JSON.stringify({ query: REFRESH_TOKENS.loc?.source.body }),
-    };
-    const response = await fetch(`${process.env.NEXT_PUBLIC_API_HOST}/graphql`, options);
-
-    if (!response.ok) {
-      throw new RefreshTokenError(`Token refresh failed with status: ${response.status}`);
-    }
-
-    const cookiesString = response.headers.get('set-cookie') ?? '';
-
-    const cookies = parseSetCookieStringToValues(cookiesString);
-
+    );
+    console.log('cookies', cookies);
     const { accessToken, refreshToken } = cookies;
     const decodedAccessToken = jwtDecode(accessToken);
 

@@ -44,9 +44,13 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
           throw new Error('Unauthorized');
         }
 
+        const { name, picture } = session.user ?? {};
+
         return {
           id: String(session.userId),
           sessionId: session.sessionId,
+          name,
+          image: picture,
           email,
           accessToken,
           refreshToken,
@@ -65,47 +69,46 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       return !!auth;
     },
     async signIn({ user, account, profile, email, credentials }) {
-      console.log('===== signIn', { user, account, profile, email, credentials });
-      // const { userAgent, ip } = credentials ?? {};
+      // console.log('===== signIn', { user, account, profile, email, credentials });
       const { provider, id_token } = account ?? {};
       if (provider === 'google') {
         if (!profile?.email_verified) {
           throw new Error('Email not verified');
         }
-        // user.image = profile?.picture;
         try {
-          // const res = await fetch(`${config.env.API_HOST}/auth/google`, {
-          //   body: JSON.stringify({ email: user.email, token: account?.accessToken }),
-          //   method: 'POST',
-          //   headers: {
-          //     'Content-Type': 'application/json',
-          //     'Authorization': `Bearer ${id_token}`,
-          //     'User-Agent': userAgent?.value as string,
-          //     'X-Forwarded-For': ip?.value as string,
-          //   },
-          // });
-          // // console.log('res', res);
-          // console.log(res.status, res.statusText);
-
-          // console.log('res.json', await res.json());
           const { userAgent, ip } = await getUserAgentAndIp();
 
           const { data, cookies } = await rawQuery<SignInResponse>(
             SIGN_IN_GOOGLE,
             { idToken: id_token },
             {
-              'User-Agent': userAgent as string,
-              'X-Forwarded-For': ip as string,
+              'User-Agent': userAgent,
+              'X-Forwarded-For': ip,
             },
           );
 
-          console.log('cookies', cookies);
-          console.log('data', data);
+          const { accessToken, refreshToken } = cookies;
+          const { exp } = jwtDecode(accessToken) ?? {};
+
+          const session = data?.signInGoogle;
+
+          if (!session || !accessToken || !refreshToken || !exp) {
+            throw new Error('Unauthorized');
+          }
+
+          const { name, picture } = session.user ?? {};
+
+          // Store the token data in the token object
+          user.accessToken = accessToken;
+          user.refreshToken = refreshToken;
+          user.accessTokenExpiresAt = exp;
+          user.sessionId = session.sessionId;
+          user.name = name;
+          user.image = picture;
         } catch (error) {
-          console.log('error', error);
+          console.error('Error during Google sign in:', error);
+          return false;
         }
-      } else if (provider === 'credentials') {
-        // const res = await fetch('http://localhost:4000/api/auth/credentials', {
       }
 
       return true;
@@ -115,17 +118,19 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     },
     async jwt({ token, account, user, profile, trigger, session }): Promise<JWT> {
       // console.log('===== jwt', { token, account, user, profile, trigger, session });
-      if (account && user) {
+      if (user) {
         token.accessTokenExpiresAt = user.accessTokenExpiresAt;
-        token.accessToken = user.accessToken!;
+        token.accessToken = user.accessToken;
         token.refreshToken = user.refreshToken;
         token.sessionId = user.sessionId;
+        token.provider = account?.provider;
+        token.sub = user.id;
       }
 
       return token;
     },
     async session({ session, token }): Promise<Session> {
-      // console.log('===== session', { session, token });
+      // console.log('===== session', { session, token, user });
       if (!token) {
         return session;
       }
@@ -135,23 +140,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         expires: session.expires,
         user: session.user,
         accessToken: token.accessToken,
+        provider: token.provider,
       };
     },
   },
 });
-
-declare module 'next-auth' {
-  interface Session {
-    sessionId: string;
-    accessToken: string;
-  }
-}
 
 declare module 'next-auth/jwt' {
   interface JWT {
     sessionId: string;
     accessToken: string;
     accessTokenExpiresAt: number;
-    refreshToken?: string;
+    refreshToken: string;
+    provider?: string;
   }
 }

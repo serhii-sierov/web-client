@@ -8,17 +8,13 @@ declare module 'next-auth' {
     accessToken: string;
     refreshToken: string;
     accessTokenExpiresAt: number;
-    // idToken?: string;
-    // exp: number;
-    // role: string;
+    name?: string;
+    image?: string;
   }
 
-  // interface Session {
-  //   user: User & DefaultSession['user'];
-  //   sessionId: string;
-  //   expires: string;
-  //   error: string;
-  //   accessToken?: string;
-  //   refreshToken?: string;
-  // }
+  interface Session {
+    sessionId: string;
+    accessToken: string;
+    provider?: string;
+  }
 }
