@@ -1,6 +1,8 @@
-import { updateCookie } from '@/middleware';
-import { NextRequest, NextResponse } from 'next/server';
+import { mutate } from '@/src/lib/apollo/client';
+import { SIGN_OUT } from '@/src/lib/apollo/graphql/mutations';
+import { signOut } from '@/src/lib/auth';
 
-export async function GET(request: NextRequest) {
-  return updateCookie(null, request, new NextResponse());
+export async function GET() {
+  await mutate({ mutation: SIGN_OUT });
+  await signOut();
 }

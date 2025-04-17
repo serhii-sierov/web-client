@@ -5,5 +5,6 @@ export interface Session {
 }
 
 export interface SignInResponse {
-  signIn: Session;
+  signInCredentials: Session;
+  signInGoogle: Session;
 }

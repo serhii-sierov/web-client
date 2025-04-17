@@ -97,6 +97,7 @@ export const mutate = async <
 export const rawQuery = async <T = unknown, TVariables extends OperationVariables = OperationVariables>(
   query: DocumentNode | TypedDocumentNode<T, TVariables>,
   variables: TVariables,
+  additionalHeaders?: Record<string, string>,
 ): Promise<FetchResult<T> & { cookies: Record<string, string>; status: number; statusText: string }> => {
   const uri = httpLink().options.uri?.toString();
   if (!uri) {
@@ -105,7 +106,11 @@ export const rawQuery = async <T = unknown, TVariables extends OperationVariable
   const res = await fetch(uri, {
     body: JSON.stringify({ query: query.loc?.source.body, variables }),
     method: 'POST',
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Access-Control-Allow-Origin': '*',
+      ...additionalHeaders,
+    },
   });
   if (!res.ok) {
     throw new Error('GraphQL request failed');

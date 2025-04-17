@@ -3,9 +3,9 @@
 import { signIn } from '@/src/lib/auth';
 
 const signInGoogleAction = async () => {
-  console.log('signIGoogleAction');
+  console.log('signInGoogleAction');
 
-  const signInResult = await signIn('google', { redirect: true });
+  const signInResult = await signIn('google');
   console.log(signInResult);
 };
 
