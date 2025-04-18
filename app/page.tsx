@@ -35,6 +35,7 @@ const Home = async () => {
   return (
     <div>
       <main>Home</main>
+      <h1 className='text-3xl font-bold underline'>User info</h1>
       {user && <pre>{JSON.stringify(user, null, 2)}</pre>}
       <footer>Footer</footer>
     </div>

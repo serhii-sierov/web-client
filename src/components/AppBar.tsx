@@ -27,7 +27,7 @@ const AppBar = async () => {
           Session ID: {session.sessionId}
           <br />
           Provider: {session?.provider}
-          <SignOutButton>Sign Out</SignOutButton>
+          <SignOutButton variant='outline'>Sign Out</SignOutButton>
         </div>
       )}
     </div>

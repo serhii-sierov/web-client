@@ -1,4 +1,5 @@
 import { signOutAction } from '@/actions/signOut';
+import { Button } from '@/components/ui/button';
 
 const SignOutButton: React.FC<React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement>>> = ({
   children,
@@ -6,9 +7,9 @@ const SignOutButton: React.FC<React.PropsWithChildren<React.ButtonHTMLAttributes
 }) => {
   return (
     <form action={signOutAction}>
-      <button {...restProps} type='submit'>
+      <Button {...restProps} type='submit' variant='outline'>
         {children}
-      </button>
+      </Button>
     </form>
   );
 };
