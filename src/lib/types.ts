@@ -9,7 +9,7 @@ export interface Session {
 }
 
 export interface SignInResponse {
-  signInCredentials?: Session;
+  signIn?: Session;
   signInGoogle?: Session;
   refreshTokens?: Session;
 }

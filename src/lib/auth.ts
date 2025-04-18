@@ -4,7 +4,7 @@ import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 
 import { rawQuery } from './apollo/client';
-import { SIGN_IN_CREDENTIALS, SIGN_IN_GOOGLE } from './apollo/graphql/mutations';
+import { SIGN_IN, SIGN_IN_GOOGLE } from './apollo/graphql/mutations';
 import { getUserAgentAndIp } from './getUserAgentAndIp';
 import { jwtDecode } from './jwtDecode';
 import { SignInResponse } from './types';
@@ -27,7 +27,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const { userAgent, ip } = await getUserAgentAndIp();
 
         const { data, cookies } = await rawQuery<SignInResponse>(
-          SIGN_IN_CREDENTIALS,
+          SIGN_IN,
           { email, password },
           {
             'User-Agent': userAgent,
@@ -38,7 +38,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const { accessToken, refreshToken } = cookies;
         const { exp } = jwtDecode(accessToken) ?? {};
 
-        const session = data?.signInCredentials;
+        const session = data?.signIn;
 
         if (!session || !accessToken || !refreshToken || !exp) {
           throw new Error('Unauthorized');

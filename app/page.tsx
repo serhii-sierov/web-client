@@ -21,6 +21,10 @@ const Home = async () => {
               sessionId
               device
               ipAddress
+              createdAt
+              identity {
+                provider
+              }
             }
           }
         }
