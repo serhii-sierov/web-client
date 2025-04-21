@@ -1,10 +1,12 @@
 'use client';
 
+import { useTransition } from 'react';
 import { useForm } from 'react-hook-form';
 
 import { Button } from '@/src/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/src/components/ui/form';
 import { Input } from '@/src/components/ui/input';
+import { Spinner } from '@/src/components/ui/spinner';
 import { zodResolver } from '@hookform/resolvers/zod';
 import Image from 'next/image';
 import * as z from 'zod';
@@ -22,6 +24,9 @@ interface LoginFormProps {
 }
 
 export const LoginForm = ({ onSubmit, onGoogleSignIn }: LoginFormProps) => {
+  const [isSignInPending, startSignInTransition] = useTransition();
+  const [isGooglePending, startGoogleTransition] = useTransition();
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -29,6 +34,20 @@ export const LoginForm = ({ onSubmit, onGoogleSignIn }: LoginFormProps) => {
       password: '',
     },
   });
+
+  const handleSubmit = (values: FormValues) => {
+    startSignInTransition(async () => {
+      await onSubmit(values);
+    });
+  };
+
+  const handleGoogleSignIn = () => {
+    startGoogleTransition(async () => {
+      await onGoogleSignIn();
+    });
+  };
+
+  const isAnyPending = isSignInPending || isGooglePending;
 
   return (
     <div className='min-h-screen w-full flex items-center justify-center p-4'>
@@ -39,7 +58,7 @@ export const LoginForm = ({ onSubmit, onGoogleSignIn }: LoginFormProps) => {
         </div>
 
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className='flex flex-col gap-4'>
+          <form onSubmit={form.handleSubmit(handleSubmit)} className='flex flex-col gap-4'>
             <div className='flex flex-col gap-4'>
               <FormField
                 control={form.control}
@@ -52,6 +71,7 @@ export const LoginForm = ({ onSubmit, onGoogleSignIn }: LoginFormProps) => {
                         type='email'
                         placeholder='Enter your email'
                         className='w-full px-3 py-2 transition-colors border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30'
+                        disabled={isAnyPending}
                         {...field}
                       />
                     </FormControl>
@@ -71,6 +91,7 @@ export const LoginForm = ({ onSubmit, onGoogleSignIn }: LoginFormProps) => {
                         type='password'
                         placeholder='Enter your password'
                         className='w-full px-3 py-2 transition-colors border rounded-md focus:outline-none focus:ring-2 focus:ring-primary/30'
+                        disabled={isAnyPending}
                         {...field}
                       />
                     </FormControl>
@@ -85,8 +106,16 @@ export const LoginForm = ({ onSubmit, onGoogleSignIn }: LoginFormProps) => {
                 variant='secondary'
                 type='submit'
                 className='w-full py-2.5 font-medium transition-colors duration-150'
+                disabled={isAnyPending}
               >
-                Sign In
+                {isSignInPending ? (
+                  <>
+                    <Spinner />
+                    Signing in...
+                  </>
+                ) : (
+                  'Sign In'
+                )}
               </Button>
               <div className='relative py-2'>
                 <div className='absolute inset-0 flex items-center'>
@@ -100,16 +129,26 @@ export const LoginForm = ({ onSubmit, onGoogleSignIn }: LoginFormProps) => {
                 type='button'
                 variant='outline'
                 className='w-full py-2.5 font-medium border transition-all duration-150 hover:bg-accent hover:text-accent-foreground focus:outline-none focus:ring-2 focus:ring-primary/30 flex items-center justify-center gap-2'
-                onClick={() => onGoogleSignIn()}
+                onClick={handleGoogleSignIn}
+                disabled={isAnyPending}
               >
-                <Image
-                  src='/icons/google.svg'
-                  alt='Google'
-                  width={20}
-                  height={20}
-                  className='h-5 w-5 transition-transform group-hover:scale-110'
-                />
-                Sign In with Google
+                {isGooglePending ? (
+                  <>
+                    <Spinner />
+                    Connecting to Google...
+                  </>
+                ) : (
+                  <>
+                    <Image
+                      src='/icons/google.svg'
+                      alt='Google'
+                      width={20}
+                      height={20}
+                      className='h-5 w-5 transition-transform group-hover:scale-110'
+                    />
+                    Sign In with Google
+                  </>
+                )}
               </Button>
             </div>
           </form>
