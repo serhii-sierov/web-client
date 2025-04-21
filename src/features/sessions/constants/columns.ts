@@ -32,8 +32,4 @@ export const columns: ColumnDef<Session>[] = [
       return row.original.identity.provider;
     },
   },
-  {
-    accessorKey: 'isCurrent',
-    header: 'Current',
-  },
 ];

@@ -12,11 +12,12 @@ import {
   TypedDocumentNode,
 } from '@apollo/client';
 import { ApolloClient, InMemoryCache, registerApolloClient } from '@apollo/experimental-nextjs-app-support';
-import { DocumentNode, GraphQLFormattedError } from 'graphql';
+import { DocumentNode, GraphQLError, GraphQLFormattedError } from 'graphql';
 import { redirect } from 'next/navigation';
 
 import { createAuthLink, errorLink, httpLink } from './links';
 
+import { AuthenticationError } from '../errors';
 import { parseSetCookieStringToValues } from '../parseCookies';
 
 const handleUnauthorizedError = (errors?: readonly GraphQLFormattedError[]) => {
@@ -47,13 +48,16 @@ export const query = async <T = unknown, TVariables extends OperationVariables =
     );
 
     const response = await getClient().query<T, TVariables>(options);
+    console.log('1');
+
     handleUnauthorizedError(response.errors);
 
     return response;
   } catch (error) {
-    console.log('query error');
+    console.log('query error', error);
 
     if (error instanceof ApolloError) {
+      console.log('2', error.graphQLErrors);
       handleUnauthorizedError(error.graphQLErrors);
     }
 

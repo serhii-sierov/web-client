@@ -4,18 +4,22 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { cn } from '@/src/lib/utils';
 import { ColumnDef, flexRender, getCoreRowModel, useReactTable } from '@tanstack/react-table';
 
-interface DataTableProps<TData, TValue> {
-  columns: Readonly<ColumnDef<TData, TValue>[]>;
-  data: Readonly<TData[]>;
+import { Session } from '../types';
+
+interface SessionsTableProps {
+  columns: Readonly<ColumnDef<Session>[]>;
+  data: Readonly<Session[]>;
 }
 
-export function DataTable<TData extends { isCurrent?: boolean }, TValue>({
-  columns,
-  data,
-}: Readonly<DataTableProps<TData, TValue>>) {
+export function SessionsTable({ columns, data }: Readonly<SessionsTableProps>) {
   const table = useReactTable({
     data: [...data],
     columns: [...columns],
+    state: {
+      columnVisibility: {
+        isCurrent: false,
+      },
+    },
     getCoreRowModel: getCoreRowModel(),
   });
 
@@ -41,8 +45,7 @@ export function DataTable<TData extends { isCurrent?: boolean }, TValue>({
               <TableRow
                 key={row.id}
                 data-state={row.getIsSelected() && 'selected'}
-                data-current-session={row.original.isCurrent}
-                className={cn(row.original.isCurrent && 'bg-blue-500')}
+                className={cn(row.original && 'bg-blue-500', 'px-4')}
               >
                 {row.getVisibleCells().map((cell) => (
                   <TableCell key={cell.id}>{flexRender(cell.column.columnDef.cell, cell.getContext())}</TableCell>

@@ -1,4 +1,4 @@
-import { DataTable } from '@/src/features/sessions/components/DataTable';
+import { SessionsTable } from '@/src/features/sessions/components/SessionsTable';
 import { query } from '@/src/lib/apollo/client';
 import { auth } from '@/src/lib/auth';
 
@@ -20,7 +20,7 @@ const SessionsPage = async () => {
 
   return (
     <div className='container mx-auto py-10'>
-      <DataTable
+      <SessionsTable
         columns={columns}
         data={data.user.sessions.map((session) => ({
           ...session,
