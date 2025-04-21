@@ -1,4 +1,5 @@
 import AppBar from '@/src/components/AppBar';
+import { auth } from '@/src/lib/auth';
 import type { Metadata } from 'next';
 import localFont from 'next/font/local';
 
@@ -25,12 +26,15 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  const session = await auth();
+
+  console.log('session!!', session);
+
   return (
     <html lang='en'>
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
-        <AppBar />
+        {session && <AppBar />}
         {children}
-        {/* <ApolloWrapper>{children}</ApolloWrapper> */}
       </body>
     </html>
   );

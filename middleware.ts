@@ -1,10 +1,12 @@
 import { encode, getToken } from 'next-auth/jwt';
 import { type NextMiddleware, type NextRequest, NextResponse } from 'next/server';
 
+import { auth } from './src/lib/auth';
 import { RefreshTokenError } from './src/lib/errors';
 import { refreshAccessToken, shouldUpdateToken } from './src/lib/refreshTokens';
 
 export const SIGNIN_SUB_URL = '/login';
+export const GOOGLE_AUTH_CALLBACK_URL = '/api/auth/callback/google';
 
 const sessionTimeout = 60 * 60 * 24 * 30; // 30 days
 const isSecure = process.env.NEXTAUTH_URL?.startsWith('https://');
@@ -53,14 +55,15 @@ export const middleware: NextMiddleware = async (request: NextRequest) => {
 
   let response = NextResponse.next();
   // Skip middleware for Google auth callback
-  if (request.url.includes('/api/auth/callback/google')) {
+  if (request.url.includes(GOOGLE_AUTH_CALLBACK_URL)) {
     return response;
   }
 
-  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
-  console.log('token', token);
+  const session = await auth();
 
-  if (!token) {
+  const token = await getToken({ req: request, secret: process.env.AUTH_SECRET });
+
+  if (!token || !session) {
     console.log('redirecting to login');
     return NextResponse.redirect(new URL(SIGNIN_SUB_URL, request.url));
   }

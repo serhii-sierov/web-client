@@ -1,5 +1,5 @@
 import { signOutAction } from '@/actions/signOut';
-import { Button } from '@/components/ui/button';
+import { Button } from '@/src/components/ui/button';
 
 const SignOutButton: React.FC<React.PropsWithChildren<React.ButtonHTMLAttributes<HTMLButtonElement>>> = ({
   children,
