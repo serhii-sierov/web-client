@@ -35,6 +35,7 @@ export default async function RootLayout({
       <body className={`${geistSans.variable} ${geistMono.variable}`}>
         {session && <AppBar />}
         {children}
+        <footer>Footer</footer>
       </body>
     </html>
   );
